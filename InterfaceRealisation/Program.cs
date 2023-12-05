@@ -20,12 +20,10 @@ namespace interfaces
             }
             var functinal = new MyFunctional() { points = points };
             var fun = new LineFunction();
-
-            var p = new Vector();
-            p.Add(points[0].x);
-            var res = optimizer.Minimize(functinal, fun, initial, p);
+            optimizer.points = points;
+            var res = optimizer.Minimize(functinal, fun, initial);
             Console.WriteLine($"a={res[0]},b={res[1]}");
-            res = optimizer2.Minimize(functinal, fun, initial, p);
+            res = optimizer2.Minimize(functinal, fun, initial);
             Console.WriteLine($"a={res[0]},b={res[1]}");
 
         }

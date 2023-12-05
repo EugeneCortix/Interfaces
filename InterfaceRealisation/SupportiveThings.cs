@@ -10,27 +10,28 @@ namespace InterfaceRealisation
     public class Vector : List<double>, IVector
     {
     }
+
     class LineDerivative : IDifferentiableFunction
     {
-        public double a, b;
-        public IVector Gradient(IVector point)
+        public List<(double x, double y)> points;
+        public IVector Gradient(IVector point) // point[0] = a, point[1] = b;
         {
-            //Попробуем по a & b
             var grad = new Vector();
-            //double val = Value(point);
-            grad.Add(point[0]);  // a derivative
-            grad.Add(1); // b
+            double diffa = 0, diffb = 0;
+            foreach (var p in points)
+            {
+                diffa += -2 * (p.y - point[0] * p.x - point[1]) * p.x;
+                diffb += -2 * (p.y - point[0] * p.x - point[1]);
+            }
+            grad.Add(diffa);
+            grad.Add(diffb);
             return grad;
         }
 
         public double Value(IVector point)
         {
-            double delta = 0.001;
-            double left = (point[0]-delta)*a + b;
-            double right = (point[0]+delta)*a + b;
-            return (right - left)/(2*delta);           
+            throw new NotImplementedException();
         }
-        public IDifferentiableFunction Bind(IVector parameters) => new LineDerivative() { a = parameters[0], b = parameters[1] };
     }
 }
 
