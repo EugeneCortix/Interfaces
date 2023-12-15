@@ -20,7 +20,7 @@ namespace InterfaceRealisation
             foreach (var p in initialParameters) param.Add(p);
             foreach (var p in initialParameters) prevparam.Add(p);
             
-            var der = new LineDerivative() { points = points };
+            var der = new Derivative() { points = points, functiontype = function };
             
             while (difference > precision)
             {
@@ -47,6 +47,16 @@ namespace InterfaceRealisation
         }
 
     }
+
+    class GaussNewton : IOptimizator
+    {
+        // Do with respect to a & b, like I did for Gradient method
+        public IVector Minimize(IFunctional objective, IParametricFunction function, IVector initialParameters, IVector minimumParameters = null, IVector maximumParameters = null)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     // Пример
     class MinimizerMonteCarlo : IOptimizator
     {

@@ -47,7 +47,7 @@ namespace InterfaceRealisation
         }
 
     }
-    class L2 : IDifferentiableFunctional
+    class L2 : IDifferentiableFunctional, ILeastSquaresFunctional
     {
         public List<(double x, double y)> points;
         public IVector Gradient(IFunction function)
@@ -55,6 +55,21 @@ namespace InterfaceRealisation
             var l1 = new L1() { points = points };
             var res = l1.Gradient(function);
             return res;
+        }
+
+        public IMatrix Jacobian(IFunction function)
+        {
+            var J = new Matrix();
+            var fun1 = new List<double>();
+            var ders = Gradient(function);
+            for(int i = 0; i < ders.Count; i++) { fun1.Add(ders[i]); }
+            J.Add(fun1);
+            return J;
+        }
+
+        public IVector Residual(IFunction function)
+        {
+            throw new NotImplementedException();
         }
 
         public double Value(IFunction function)
@@ -65,21 +80,63 @@ namespace InterfaceRealisation
             return Math.Sqrt(sum);
         }
     }
-    class Linf : ILeastSquaresFunctional
+    class Linf : IFunctional
     {
-        public IMatrix Jacobian(IFunction function)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IVector Residual(IFunction function)
-        {
-            throw new NotImplementedException();
-        }
-
+        public List<(double x, double y)> points;
         public double Value(IFunction function)
         {
-            throw new NotImplementedException();
+            double val = 0;
+            double currval;
+            foreach(var p in points)
+            {
+                var currp = new Vector();
+                currp.Add(p.x); 
+                currp.Add(p.y);
+                currval = Math.Abs(function.Value(currp));
+                if (currval > val) val = currval;
+            }
+            return val;
+        }
+    }
+    class Integral : IFunctional
+    {
+        public List<(double x, double y)> points;
+        public double Value(IFunction function)
+        {
+            if(points.Count < 2) return 0;
+            double sum = 0;
+            for(int i = 1 ; i < points.Count; i++)
+            {
+                var p1 = new Vector() { points[i-1].x, points[i - 1].y};
+                var p2 = new Vector() { points[i].x, points[i].y};
+                double x1 = points[i - 1].x;
+                double x2 = points[i].x;
+                double y1 = function.Value(p1);
+                double y2 = function.Value(p2);
+                // halfsumm
+                double h = halfsum(y1, y2);
+                sum += (x2-x1)*h;
+            }
+            return sum;
+        }
+        double halfsum(double l, double r) 
+        { 
+        if(l < 0 && r < 0)
+            {
+                l *= -1;
+                r *= -1;
+            }
+        if(l > 0 && r < 0)
+            {
+                r *= -1;
+                l += r;
+            }
+        if(l < 0 && r > 0)
+            {
+                l *= -1;
+                r += l;
+            }
+            return (l + r) / 2;
         }
     }
 }
