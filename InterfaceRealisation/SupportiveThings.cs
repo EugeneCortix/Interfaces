@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
+using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -10,21 +12,15 @@ namespace InterfaceRealisation
 {
     public class Vector : List<double>, IVector
     {
-    }
-    public class Matrix : IMatrix
-    {
-        public IList<double> this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
-        public int Count => throw new NotImplementedException();
+    }
+    public class Matrix : List<List<double>>, IMatrix
+    {
+        IList<double> IList<IList<double>>.this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         public bool IsReadOnly => throw new NotImplementedException();
 
         public void Add(IList<double> item)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Clear()
         {
             throw new NotImplementedException();
         }
@@ -35,11 +31,6 @@ namespace InterfaceRealisation
         }
 
         public void CopyTo(IList<double>[] array, int arrayIndex)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IEnumerator<IList<double>> GetEnumerator()
         {
             throw new NotImplementedException();
         }
@@ -59,65 +50,69 @@ namespace InterfaceRealisation
             throw new NotImplementedException();
         }
 
-        public void RemoveAt(int index)
-        {
-            throw new NotImplementedException();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
+        IEnumerator<IList<double>> IEnumerable<IList<double>>.GetEnumerator()
         {
             throw new NotImplementedException();
         }
     }
 
-    class Derivative : IDifferentiableFunction
+    class Derivative : IDifferentiableFunctional
     {
-        public List<(double x, double y)> points;
-        public IParametricFunction functiontype;
-        public IVector Gradient(IVector point) // point[0] = a, point[1] = b;
+        public List<Vector> points;
+        public int n;
+        public IVector Gradient(IFunction function)
         {
             var grad = new Vector();
-            double diffa = 0, diffb = 0;
-            int type = Type(functiontype);
+            double fsum = 0;
+            for (int i = 0; i < points.Count; i++)
+                fsum += points[i][n - 1];
+            for(int i = 0; i <  n; i++)
+            {
+                grad.Add(fsum);
+                //grad.Add(0);
+            }
+            string type = define(function.GetType().ToString());
             switch (type)
             {
-                case 0:
-                    foreach (var p in points)
+                case "LineFunction":
+                    for (int i = 0; i < n - 1; i++)
                     {
-                        diffa += -2 * (p.y - point[0] * p.x - point[1]) * p.x;
-                        diffb += -2 * (p.y - point[0] * p.x - point[1]);
+                        /*  grad[i] += function.Value(points[i]);
+                          grad[i] *= 2 * points[i][i];*/
+                         for(int j = 0; j < points.Count; j++)
+                        {
+                            grad[i] -= function.Value(points[j]);
+                            grad[i] *= -2 * points[j][i];
+                        }
+                    }
+                    for (int j = 0; j < points.Count; j++)
+                    {
+                        grad[n-1] -= function.Value(points[j]);
+                        grad[n-1] *= -2;
                     }
                     break;
-               case 1:
+                    
+                case "Polynomial":
                     foreach (var p in points)
                     {
-                        diffa += 0;
-                        diffb += 0;
+                        
                     }
                     break;
             }
-            grad.Add(diffa);
-            grad.Add(diffb);
             return grad;
         }
-        public double Value(IVector point)
+
+        public double Value(IFunction function)
         {
             throw new NotImplementedException();
         }
-        int Type(IParametricFunction function)
+        string define(string s)
         {
-            int res = -3;
-            switch(function.GetType().ToString())
-            {
-                case "InterfaceRealisation.LineFunction":
-                    res = 0; 
-                    break;
-                case "InterfaceRealisation.Polynomial":
-                    res = 1; 
-                    break;
-                    
-            }
-            return res;
+            if (s.IndexOf("LineFunction") > -1)
+                return "LineFunction";
+            if (s.IndexOf("Polynomial") > -1)
+                return "Polynomial";
+            return s;
         }
     }
 }

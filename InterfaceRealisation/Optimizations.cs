@@ -8,7 +8,7 @@ namespace InterfaceRealisation
 {
     class GradientDescent : IOptimizator
     {
-        public List<(double x, double y)> points;
+        public List<Vector> points;
         double precision = 0.001;
         double rate = 0.0001;
         double difference = 1;
@@ -20,11 +20,12 @@ namespace InterfaceRealisation
             foreach (var p in initialParameters) param.Add(p);
             foreach (var p in initialParameters) prevparam.Add(p);
             
-            var der = new Derivative() { points = points, functiontype = function };
+            var der = new Derivative() { points = points, n = param.Count};
             
             while (difference > precision)
             {
-                var diff = der.Gradient(param);
+                var fun = function.Bind(param);
+                var diff = der.Gradient(fun);
                 for (int i = 0; i < param.Count; i++)
                 {
                     param[i] -= rate*diff[i];
@@ -34,12 +35,14 @@ namespace InterfaceRealisation
                   fun = function.Bind(param);
                   difference -= Math.Abs(objective.Value(fun));
                   difference = Math.Abs(difference);*/
-                double adiff = Math.Abs(Math.Abs(prevparam[0]) - Math.Abs(param[0]));
-                double bdiff = Math.Abs(Math.Abs(prevparam[1]) - Math.Abs(param[1]));
-              if (adiff > bdiff)
-                    difference = adiff;
-              else difference = bdiff;
-               // for(int i = 0; i < param.Count;i++) { difference += Math.Abs(Math.Abs(prevparam[i]) - Math.Abs(param[i])); }
+                /*    double adiff = Math.Abs(Math.Abs(prevparam[0]) - Math.Abs(param[0]));
+                    double bdiff = Math.Abs(Math.Abs(prevparam[1]) - Math.Abs(param[1]));
+                  if (adiff > bdiff)
+                        difference = adiff;
+                  else difference = bdiff;*/
+                difference = 0;
+                for(int i = 0; i < param.Count;i++) { difference += Math.Abs(Math.Abs(prevparam[i]) - Math.Abs(param[i])); }
+
                 prevparam = param;
 
             }

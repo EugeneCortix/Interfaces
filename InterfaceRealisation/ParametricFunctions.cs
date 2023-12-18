@@ -8,13 +8,21 @@ namespace InterfaceRealisation
 {
     class LineFunction : IParametricFunction
     {
-        public List<(double x, double y)> points;
         class InternalLineFunction : IFunction
         {
-            public double a, b;
-            public double Value(IVector point) => a * point[0] + b;  // y = ax + b
+            public IVector param;
+            public double Value(IVector point)  // f = ax + by +cz + d..
+            {
+                double f = 0;
+                for(int i = 0; i < point.Count - 1; i++)
+                {
+                    f += point[i]*param[i];
+                }
+                f += param[point.Count - 1];
+                return f;
+            }
         }
-        public IFunction Bind(IVector parameters) => new InternalLineFunction() { a = parameters[0], b = parameters[1] };
+        public IFunction Bind(IVector parameters) => new InternalLineFunction() { param = parameters};
 
     }
 
@@ -22,15 +30,22 @@ namespace InterfaceRealisation
     {
         class PolynomialFunction : IFunction
         {
-            public double a, b;
-            public double Value(IVector point)
-            { 
-                return a * point[0]* point[0] + b * point[0];  // y = ax^2 + bx
+            public IVector param;
+            public double Value(IVector point) // f = ax^3 + bx^2 + cx + d...
+            {
+                double f = 0;
+                int pow = point.Count - 1;
+                for(int i = 0; i < point.Count - 1; i++)
+                {
+                    f += Math.Pow(point[i], pow) * param[i];
+                }
+                f += param[point.Count -1];
+                return f;
             }
         }
         public IFunction Bind(IVector parameters)
         {
-            return new PolynomialFunction() { a = parameters[0],b = parameters[1] };
+            return new PolynomialFunction() {param = parameters };
         }
     }
     
