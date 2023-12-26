@@ -1,59 +1,137 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 /// 2. IFunctional 
 namespace InterfaceRealisation
 {
-    class MyFunctional : IFunctional
-    {
-        public List<(double x, double y)> points;
-        public double Value(IFunction function)
-        {
-            double sum = 0;
-            foreach (var point in points)
-            {
-                var param = new Vector();
-                param.Add(point.x);
-                var s = function.Value(param) - point.y;
-                sum += s * s;
-            }
-            return sum;
-        }
-    }
     class L1 : IDifferentiableFunctional
     {
         public List<Vector> points;
+        public int n;
         public IVector Gradient(IFunction function)
         {
-            int n = points[0].Count - 1;
-            Vector res = new Vector();
-            foreach(var p in points) 
+            var grad = new Vector();
+            for (int i = 0; i < n; i++)
             {
-                double gr = Math.Abs(p[n] - function.Value(p));
-                res.Add(gr);
+                grad.Add(0);
             }
-            return res;
+            string type = define(function.GetType().ToString());
+            switch (type)
+            {
+                case "LineFunction":
+                    for (int i = 0; i < n - 1; i++)
+                    {
+                        for (int j = 0; j < points.Count; j++)
+                        {
+                            grad[i] += function.Value(points[j]);
+                            grad[i] *= points[j][i];
+                        }
+                    }
+                    for (int j = 0; j < points.Count; j++)
+                    {
+                        grad[n - 1] += function.Value(points[j]);
+                    }
+                    break;
+
+                case "Polynomial":
+                    int pow = points.Count - 1;
+                    for (int i = 0; i < n - 1; i++)
+                    {
+                        for (int j = 0; j < points.Count; j++)
+                        {
+                            grad[i] += function.Value(points[j]);
+                            grad[i] *= Math.Pow(points[j][i], pow);
+                        }
+                        pow--;
+                    }
+                    for (int j = 0; j < points.Count; j++)
+                    {
+                        grad[n - 1] += function.Value(points[j]);
+                    }
+                    break;
+            }
+            return grad;
         }
 
         public double Value(IFunction function)
         {
-            var gr = Gradient(function);
             double sum = 0;
-            foreach(var g in gr) sum += g;
+            foreach(var p in points) sum += Math.Abs(function.Value(p)); //STUPID NW!
             return sum;
+        }
+        string define(string s)
+        {
+            if (s.IndexOf("LineFunction") > -1)
+                return "LineFunction";
+            if (s.IndexOf("Polynomial") > -1)
+                return "Polynomial";
+            return s;
         }
 
     }
     class L2 : IDifferentiableFunctional, ILeastSquaresFunctional
     {
         public List<Vector> points;
+        public int n;
         public IVector Gradient(IFunction function)
         {
-            var l1 = new L1() { points = points };
-            var res = l1.Gradient(function);
-            return res;
+            var grad = new Vector();
+            for (int i = 0; i < n; i++)
+            {
+                grad.Add(0);
+            }
+            string type = define(function.GetType().ToString());
+            double sqrt = 0;
+            for (int j = 0; j < points.Count; j++)
+            {
+                sqrt += function.Value(points[j]);
+            }
+            sqrt = Math.Sqrt(sqrt);
+                switch (type)
+            {
+                case "LineFunction":
+
+                    for (int i = 0; i < n - 1; i++)
+                    {
+                        for (int j = 0; j < points.Count; j++)
+                        {
+                            grad[i] += function.Value(points[j]);
+                            grad[i] *= points[j][i];
+                        }
+                        grad[i] /= sqrt;
+                        sqrt = 0;
+                    }
+                    for (int j = 0; j < points.Count; j++)
+                    {
+                        grad[n - 1] += function.Value(points[j]);
+                    }
+                    grad[n - 1] /= sqrt;
+                    break;
+
+                case "Polynomial":
+                    int pow = points.Count - 1;
+                    for (int i = 0; i < n - 1; i++)
+                    {
+                        for (int j = 0; j < points.Count; j++)
+                        {
+                            grad[i] += function.Value(points[j]);
+                            grad[i] *= Math.Pow(points[j][i], pow);
+                        }
+                        grad[i] /= sqrt;
+                        sqrt = 0;
+                        pow--;
+                    }
+                    for (int j = 0; j < points.Count; j++)
+                    {
+                        grad[n - 1] += function.Value(points[j]);
+                    }
+                    grad[n - 1] /= sqrt;
+                    break;
+            }
+            return grad;
         }
 
         public IMatrix Jacobian(IFunction function)
@@ -73,10 +151,18 @@ namespace InterfaceRealisation
 
         public double Value(IFunction function)
         {
-            var gr = Gradient(function);
             double sum = 0;
-            foreach (var g in gr) sum += g*g;
+            foreach (var p in points)
+                sum += Math.Pow(function.Value(p), 2);
             return Math.Sqrt(sum);
+        }
+        string define(string s)
+        {
+            if (s.IndexOf("LineFunction") > -1)
+                return "LineFunction";
+            if (s.IndexOf("Polynomial") > -1)
+                return "Polynomial";
+            return s;
         }
     }
     class Linf : IFunctional

@@ -19,27 +19,17 @@ namespace InterfaceRealisation
             var param = new Vector();
             foreach (var p in initialParameters) param.Add(p);
             foreach (var p in initialParameters) prevparam.Add(p);
-            
-            var der = new Derivative() { points = points, n = param.Count};
-            
+
+            var obj = CreateFunctional(points, param.Count, objective);
+
             while (difference > precision)
             {
                 var fun = function.Bind(param);
-                var diff = der.Gradient(fun);
+                var diff = obj.Gradient(fun);
                 for (int i = 0; i < param.Count; i++)
                 {
                     param[i] -= rate*diff[i];
                 }
-                /*  var fun = function.Bind(prevparam);
-                  difference = Math.Abs(objective.Value(fun));
-                  fun = function.Bind(param);
-                  difference -= Math.Abs(objective.Value(fun));
-                  difference = Math.Abs(difference);*/
-                /*    double adiff = Math.Abs(Math.Abs(prevparam[0]) - Math.Abs(param[0]));
-                    double bdiff = Math.Abs(Math.Abs(prevparam[1]) - Math.Abs(param[1]));
-                  if (adiff > bdiff)
-                        difference = adiff;
-                  else difference = bdiff;*/
                 difference = 0;
                 for(int i = 0; i < param.Count;i++) { difference += Math.Abs(Math.Abs(prevparam[i]) - Math.Abs(param[i])); }
 
@@ -49,6 +39,32 @@ namespace InterfaceRealisation
             return param;
         }
 
+        IDifferentiableFunctional CreateFunctional(List<Vector> points, int n, IFunctional objective)
+        {
+            string type = define(objective.GetType().ToString());
+            switch (type)
+            {
+                case "L1":
+                    return new L1 { n = n, points = points };
+                    break;
+                case "L2":
+                    return new L2 { n = n, points = points };
+                    break;
+            }
+            return null;
+        }
+        string define(string s)
+        {
+            if (s.IndexOf("L1") > -1)
+                return "L1";
+            if (s.IndexOf("L2") > -1)
+                return "L2";
+            if (s.IndexOf("Linf") > -1)
+                return "Linf";
+            if (s.IndexOf("Integal") > -1)
+                return "Inegral";
+            return s;
+        }
     }
 
     class GaussNewton : IOptimizator
