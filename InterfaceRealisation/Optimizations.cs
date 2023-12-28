@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Intrinsics.X86;
 using System.Text;
 using System.Threading.Tasks;
 // Monte-Carlo, Gradient, ..
@@ -70,9 +71,41 @@ namespace InterfaceRealisation
     class GaussNewton : IOptimizator
     {
         // Do with respect to a & b, like I did for Gradient method
+        public List<Vector> points;
         public IVector Minimize(IFunctional objective, IParametricFunction function, IVector initialParameters, IVector minimumParameters = null, IVector maximumParameters = null)
         {
-            throw new NotImplementedException();
+            double difference = 1;
+            double precision = 0.001;
+            
+
+            var l = new List<int>();
+            l.Add(0);
+            var prevparam = new Vector();
+            var param = new Vector();
+            foreach (var p in initialParameters) param.Add(p);
+            foreach (var p in initialParameters) prevparam.Add(p);
+            var obj = new L2 { points = points, n = param.Count };
+            
+            while(difference > precision)
+            {
+                var fun = function.Bind(param);
+                var residual = obj.Residual(fun);
+                var res = new Vector();
+                for (int i = 0; i < residual.Count; i++) { res.Add(residual[i]); }
+                var J = obj.Jacobian(fun);
+                var Jt = J.TransposedMatrix(points.Count, param.Count);
+                var GNvect = new GaussNewtonVector() { Jt = Jt, M = param.Count, N = points.Count, r = res };
+                var Jres = GNvect.GiveVector();
+
+                for (int i = 0; i < param.Count; i++)
+                    param[i] -= Jres[i];
+
+                difference = 0;
+                for (int i = 0; i < param.Count; i++) { difference += Math.Abs(Math.Abs(prevparam[i]) - Math.Abs(param[i])); }
+                prevparam = param;
+            }
+
+            return param;
         }
     }
 

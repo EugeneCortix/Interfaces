@@ -102,7 +102,7 @@ namespace InterfaceRealisation
                             grad[i] *= points[j][i];
                         }
                         grad[i] /= sqrt;
-                        sqrt = 0;
+                       // sqrt = 0;
                     }
                     for (int j = 0; j < points.Count; j++)
                     {
@@ -136,17 +136,50 @@ namespace InterfaceRealisation
 
         public IMatrix Jacobian(IFunction function)
         {
-            var J = new Matrix();
-            var fun1 = new List<double>();
-            var ders = Gradient(function);
-            for(int i = 0; i < ders.Count; i++) { fun1.Add(ders[i]); }
-            J.Add(fun1);
+            var Jlist = new List<List<double>>();
+            for(int i =0; i < points.Count; i++)
+            {
+                var strlist = new List<double>();
+                for(int j = 0; j < n;j++)
+                {
+                    double d = ParamDerivative(points[i], j, function);
+                    strlist.Add(d);
+                }
+                Jlist.Add(strlist);
+            }
+
+            var J = new Matrix(points.Count, n) { list = Jlist};
             return J;
+        }
+
+        double ParamDerivative(Vector point, int paramnum, IFunction function)
+        {
+            double der = 0;
+            string type = define(function.GetType().ToString());
+            switch(type)
+            {
+                case "LineFunction":
+                    der = point[paramnum];
+                    break;
+                case "Polynomial":
+                    double pow = n - 1 - paramnum;
+                    der = Math.Pow(point[paramnum], pow);
+                    break;
+            }
+            return der;
         }
 
         public IVector Residual(IFunction function)
         {
-            throw new NotImplementedException();
+            var residual = new Vector();
+            foreach(var p in points)
+            {
+                double r = p[ n - 1 ];
+                r -= function.Value(p);
+               // r *= r;
+                residual.Add(r);
+            }
+            return residual;
         }
 
         public double Value(IFunction function)

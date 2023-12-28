@@ -30,8 +30,10 @@ namespace InterfaceRealisation
     {
         IVector Gradient(IFunction function);
     }
-    interface IMatrix : IList<IList<double>>
+    interface IMatrix
     {
+        double this[int i, int j] { get; set; }
+        public Matrix TransposedMatrix(int N, int M);
 
     }
     interface ILeastSquaresFunctional : IFunctional

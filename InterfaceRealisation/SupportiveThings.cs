@@ -14,118 +14,145 @@ namespace InterfaceRealisation
     {
 
     }
-    public class Matrix : List<List<double>>, IMatrix
+
+    public class Matrix : IMatrix
     {
-        IList<double> IList<IList<double>>.this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-        public bool IsReadOnly => throw new NotImplementedException();
-
-        public void Add(IList<double> item)
+        public List<List<double>> list;
+        public Matrix(int N, int M)
         {
-            throw new NotImplementedException();
+            list = new List<List<double>>();
+            for (int i = 0; i < N; i++)
+            {
+                list.Add(new List<double>());
+                for (int j = 0; j < M; j++)
+                    list.Last().Add(0);
+            }
         }
 
-        public bool Contains(IList<double> item)
-        {
-            throw new NotImplementedException();
-        }
+        public double this[int i, int j] { get => list[i][j]; set => list[i][j] = value; }
 
-        public void CopyTo(IList<double>[] array, int arrayIndex)
+        public Matrix TransposedMatrix(int N, int M)
         {
-            throw new NotImplementedException();
-        }
-
-        public int IndexOf(IList<double> item)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Insert(int index, IList<double> item)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool Remove(IList<double> item)
-        {
-            throw new NotImplementedException();
-        }
-
-        IEnumerator<IList<double>> IEnumerable<IList<double>>.GetEnumerator()
-        {
-            throw new NotImplementedException();
+            var translist = new List<List<double>>();
+            for (int i = 0; i < M; i++)
+            {
+                var strlist = new List<double>();
+                for (int j = 0; j < N; j++)
+                    strlist.Add(list[j][i]);
+                translist.Add(strlist);
+            }
+           // list = translist;
+            var mat = new Matrix(M, N) {list = translist };
+            return mat;
         }
     }
 
-    class Derivative : IDifferentiableFunctional
+    public class GaussNewtonVector
     {
-        public List<Vector> points;
-        public int n;
-        public IVector Gradient(IFunction function)
+        double[] b;
+        double[,] A;
+        public int M;
+        public int N;
+        public Vector r;
+        public Matrix Jt;
+        Matrix J;
+
+        private void PrepareA()
         {
-            var grad = new Vector();
-            double fsum = 0;
-            for (int i = 0; i < points.Count; i++)
-                fsum += points[i][n - 1];
-            for(int i = 0; i <  n; i++)
-            {
-                grad.Add(fsum);
-                //grad.Add(0);
-            }
-            string type = define(function.GetType().ToString());
-            switch (type)
-            {
-                case "LineFunction":
-                    for (int i = 0; i < n - 1; i++)
-                    {
-                        /*  grad[i] += function.Value(points[i]);
-                          grad[i] *= 2 * points[i][i];*/
-                         for(int j = 0; j < points.Count; j++)
-                        {
-                            grad[i] -= function.Value(points[j]);
-                            grad[i] *= -2 * points[j][i];
-                        }
-                    }
-                    for (int j = 0; j < points.Count; j++)
-                    {
-                        grad[n-1] -= function.Value(points[j]);
-                        grad[n-1] *= -2;
-                    }
-                    break;
-                    
-                case "Polynomial":
-                    foreach (var p in points)
-                    {
-                        
-                    }
-                    break;
-            }
-            return grad;
+            J = Jt.TransposedMatrix(M, N);
+            A = new double[M, M];
+            /*for(int i = 0; i < M;i++)
+                for(int j  = 0; j < M; j++)
+                {
+                    A[i,j] =Jt[i,0] *J[0,j];
+                }*/
+            for (int i = 0; i < M; i++)
+                for (int j = 0; j < M; j++)
+                    for (int k = 0; k < N; k++)
+                        A[i,j] += Jt[i, k] * J[k, j];
         }
 
-        public double Value(IFunction function)
+        private void Prepareb()
         {
-            throw new NotImplementedException();
+            b = new double[M];
+            for (int i = 0; i < M; i++)
+                for (int j = 0; j < N; j++)
+                b[i] += Jt[i, j]*r[j];
         }
-        string define(string s)
+        public double[] GiveVector()
         {
-            if (s.IndexOf("LineFunction") > -1)
-                return "LineFunction";
-            if (s.IndexOf("Polynomial") > -1)
-                return "Polynomial";
-            return s;
+            PrepareA();
+            Prepareb();
+            double[] ans = new double[b.Length];
+            solveSLAE(ans);
+            return ans;
+        }
+        // Solves SOLaE
+        private void solveSLAE(double[] ans)
+        {
+            int nSLAE = b.Length;
+            if (ans.Length != nSLAE)
+                throw new Exception("Size of the input array is not compatable with size of SLAE");
+
+
+
+
+            for (int i = 0; i < nSLAE; i++)
+            {
+                double del = A[i, i];
+                double absDel = Math.Abs(del);
+                int iSwap = i;
+
+
+                for (int j = i + 1; j < nSLAE; j++) // ищем максимальный элемент по столбцу
+                {
+                    if (absDel < Math.Abs(A[j, i]))
+                    {
+                        del = A[j, i];
+                        absDel = Math.Abs(del);
+                        iSwap = j;
+                    }
+                }
+
+                if (iSwap != i)
+                {
+                    double buf;
+                    for (int j = i; j < nSLAE; j++)
+                    {
+                        buf = A[i, j];
+                        A[i, j] = A[iSwap, j];
+                        A[iSwap, j] = buf;
+                    }
+                    buf = b[i];
+                    b[i] = b[iSwap];
+                    b[iSwap] = buf;
+                }
+
+                for (int j = i; j < nSLAE; j++)
+                    A[i, j] /= del;
+
+                b[i] /= del;
+
+                for (int j = i + 1; j < nSLAE; j++)
+                {
+                    if (A[j, i] == 0) continue;
+
+                    double el = A[j, i];
+                    for (int k = i; k < nSLAE; k++)
+                    {
+                        A[j, k] -= A[i, k] * el;
+                    }
+
+                    b[j] -= b[i] * el;
+                }
+            }
+
+            for (int i = nSLAE - 1; i > -1; i--)
+            {
+                for (int j = i + 1; j < nSLAE; j++)
+                    b[i] -= ans[j] * A[i, j];
+                ans[i] = b[i];
+            }
         }
     }
 }
-
-
-/*
- class LineFunction : IParametricFunction
-    {
-        class InternalLineFunction : IFunction
-        {
-            public double a, b;
-            public double Value(IVector point) => a * point[0] + b;  // y = ax + b
-        }
-        public IFunction Bind(IVector parameters) => new InternalLineFunction() { a = parameters[0], b = parameters[1] };
-    }
- */

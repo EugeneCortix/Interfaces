@@ -9,6 +9,7 @@ namespace interfaces
         {
             var optimizer = new GradientDescent();
             var optimizer2 = new MinimizerMonteCarlo();
+            var optimizer3 = new GaussNewton();
             var initial = new Vector();
             int n = int.Parse(Console.ReadLine());
             List<Vector> points = new();
@@ -26,9 +27,12 @@ namespace interfaces
             var functinal = new L1() { points = points };
             var fun = new LineFunction();
             optimizer.points = points;
+            optimizer3.points = points;
             var res = optimizer.Minimize(functinal, fun, initial);
             Console.WriteLine(typeres(res));
             res = optimizer2.Minimize(functinal, fun, initial);
+            Console.WriteLine(typeres(res));
+            res = optimizer3.Minimize(functinal, fun, initial);
             Console.WriteLine(typeres(res));
 
         }
